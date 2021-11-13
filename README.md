@@ -1,6 +1,11 @@
+#### @hjliu2018 @lldeng2018 :warning: You both need to download and maintain your own ```data/``` and ```sample-logs/``` directories. They are too big to host here. :warning:
+
+<hr>
+
 # <center> CS 3640: Introduction to Networks and Their Applications </center>
 ## <center> Assignment 3: BGP Routing and Hijack Detection [16 points] </center>
 <center> Released on: Oct 29th | Due on: Nov 18th 11:59pm</center>
+
 <hr>
 
 ### Learning goals
