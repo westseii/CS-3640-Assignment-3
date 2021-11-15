@@ -12,6 +12,7 @@ build your routing table.
 
 """
 
+from os import times
 import mrtparse
 import json
 import time
@@ -22,6 +23,7 @@ class ParseUpdates:
     """
         Class for parsing updates recorded in BGP MRT dumps.
     """
+
     def __init__(self, filename):
         """
         :param filename: This is the MRT file to be parsed by the methods in
@@ -56,9 +58,29 @@ class ParseUpdates:
         ###
         # fill in your code here
         ###
+
+        # get data from mrtparse
+        for update in mrtparse.Reader(self.filename):
+
+            # parse the update
+            timestamp = update.data['timestamp']
+            peer_as = update.data['peer_as']
+            bgp_message = update.data['bgp_message']  # bgp_message dict
+
+            # run the appropriate functions
+            self.__parse_announcement_updates(timestamp, peer_as, bgp_message)
+            self.__parse_withdrawal_updates(timestamp, peer_as, bgp_message)
+
+            break  # only parse the first update. remove this break to parse ALL updates
+
+        # python3 Tests.py -cp 1
+
+        ###
         self.time_to_parse = time.time() - start_time
-        logging.info("Time taken to parse all records: %d second(s)" % self.time_to_parse)
-        logging.info("Routes announced: %d | Routes withdrawn: %d" % (self.n_announcements, self.n_withdrawals))
+        logging.info("Time taken to parse all records: %d second(s)" %
+                     self.time_to_parse)
+        logging.info("Routes announced: %d | Routes withdrawn: %d" %
+                     (self.n_announcements, self.n_withdrawals))
         return True
 
     def __parse_announcement_updates(self, timestamp, peer_as, bgp_message):
@@ -90,6 +112,28 @@ class ParseUpdates:
         ###
         # fill in your code here
         ###
+
+        print("\n")
+        print(timestamp)
+        print(peer_as)
+        print(bgp_message)  # show in terminal, debug
+        print("\n")
+
+        update = {
+            "timestamp": timestamp[0],
+            "range": None,
+            "next_hop": None,
+            "peer_as": None,
+            "as_path": None
+        }
+
+        bgp_message__destination_ip_range = None
+        bgp_message__next_hop = None
+        bgp_message__as_path = None
+
+        # python3 Tests.py -cp 1
+
+        ###
         return True
 
     def __parse_withdrawal_updates(self, timestamp, peer_as, bgp_message):
@@ -118,6 +162,10 @@ class ParseUpdates:
         ###
         # fill in your code here
         ###
+
+        # python3 Tests.py -cp 1
+
+        ###
         return True
 
     def get_next_updates(self):
@@ -128,9 +176,11 @@ class ParseUpdates:
         withdrawals when called. Records yielded are sorted by time.
         :return:
         """
-        timestamps = sorted(list(set(self.announcements.keys()).union(set(self.withdrawals.keys()))))
+        timestamps = sorted(
+            list(set(self.announcements.keys()).union(set(self.withdrawals.keys()))))
         for timestamp in timestamps:
-            update_record = {'announcements': [], 'withdrawals': [], 'timestamp': timestamp}
+            update_record = {'announcements': [],
+                             'withdrawals': [], 'timestamp': timestamp}
             if timestamp in self.announcements.keys():
                 update_record['announcements'] = self.announcements[timestamp]
             if timestamp in self.withdrawals.keys():
@@ -157,17 +207,21 @@ def main():
     pu = ParseUpdates(filename="./data/updates.20080219.0015.bz2")
     pu.parse_updates()
     pu.to_json_helper_function("./sample-mrt-in-json.json")
-    logging.info("Time taken to parse all records: %d second(s)" % pu.time_to_parse)
-    logging.info("Routes announced: %d | Routes withdrawn: %d" % (pu.n_announcements, pu.n_withdrawals))
+    logging.info("Time taken to parse all records: %d second(s)" %
+                 pu.time_to_parse)
+    logging.info("Routes announced: %d | Routes withdrawn: %d" %
+                 (pu.n_announcements, pu.n_withdrawals))
     updates = pu.get_next_updates()
     while True:
         next_updates = updates.next()
         if next_updates['timestamp'] is None:
-            logging.info("No more updates to process in file: %s" % pu.filename)
+            logging.info("No more updates to process in file: %s" %
+                         pu.filename)
             break
         else:
             logging.info("At timestamp: %d | %d announcements | %d withdrawals" % (next_updates['timestamp'],
-                                                                                   len(next_updates['announcements']),
+                                                                                   len(
+                                                                                       next_updates['announcements']),
                                                                                    len(next_updates['withdrawals'])))
 
 

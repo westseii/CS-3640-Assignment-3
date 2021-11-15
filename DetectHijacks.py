@@ -25,6 +25,7 @@ class DetectHijacks:
         Class for identifying and logging suspicious updates and applying
         safe updates to a routing table.
     """
+
     def __init__(self, start_table, monitored_range):
         """
         :param start_table: The routing table to which updates are to be
@@ -104,7 +105,8 @@ class DetectHijacks:
                     self.asn_to_org_dictionary[record["asn"]] = record["name"]
                 except KeyError:
                     continue
-        logging.info("ASN to Org dictionary built. %d mappings found" % len(self.asn_to_org_dictionary.keys()))
+        logging.info("ASN to Org dictionary built. %d mappings found" %
+                     len(self.asn_to_org_dictionary.keys()))
 
 
 def main():
@@ -118,6 +120,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-

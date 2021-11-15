@@ -28,6 +28,7 @@ class RoutingTable:
     """
         Class for updating routing tables.
     """
+
     def __init__(self):
         """
         self.routing_table is a dictionary keyed by destination IP range and
@@ -194,8 +195,10 @@ class RoutingTable:
         s = "Earliest update seen: %d, \t Latest update seen: %d" % (self.time_of_earliest_update,
                                                                      self.time_of_latest_update)
         s += "\nTotal updates received: %d, \t " \
-             "Total number of path changes observed: %d" % (self.total_updates_received, self.total_paths_changed)
-        s += "\nTotal number of routing table entries currently in table: %d" % len(self.routing_table.keys())
+             "Total number of path changes observed: %d" % (
+                 self.total_updates_received, self.total_paths_changed)
+        s += "\nTotal number of routing table entries currently in table: %d" % len(
+            self.routing_table.keys())
         s += "\nReachable addresses of the IPv4 space from current table: %d" % self.reachability
         print(s)
         logging.info(s)
@@ -210,7 +213,8 @@ def main():
     while True:
         next_updates = updates.next()
         if next_updates['timestamp'] is None:
-            logging.info("No more updates to process in file: %s" % pu.filename)
+            logging.info("No more updates to process in file: %s" %
+                         pu.filename)
             break
         else:
             for announcement in next_updates["announcements"]:
