@@ -83,6 +83,16 @@ class RoutingTable:
         """
         ###
         # fill in your code here
+
+        # update total_updates_received
+        self.total_updates_received = self.total_updates_received + 1
+
+        # update time_of_earliest_update & time_of_latest_update
+        t = announcement["timestamp"]
+        if t < self.time_of_earliest_update:
+            self.time_of_earliest_update = t
+        self.time_of_latest_update = t
+        
         ###
 
     def apply_withdrawal(self, withdrawal):
@@ -108,6 +118,15 @@ class RoutingTable:
         """
         ###
         # fill in your code here
+
+        # update total_updates_received
+        self.total_updates_received = self.total_updates_received + 1
+
+        # update time_of_earliest_update & time_of_latest_update
+        t = withdrawal["timestamp"]
+        if t < self.time_of_earliest_update:
+            self.time_of_earliest_update = t
+        self.time_of_latest_update = t
         ###
 
     def measure_reachability(self):
