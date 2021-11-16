@@ -71,8 +71,6 @@ class ParseUpdates:
             self.__parse_announcement_updates(timestamp, peer_as, bgp_message)
             self.__parse_withdrawal_updates(timestamp, peer_as, bgp_message)
 
-            # break  # only parse the first update. remove this break to parse ALL updates
-
         # python3 Tests.py -cp 1
 
         ###
@@ -115,15 +113,12 @@ class ParseUpdates:
 
         dest_ip_range = bgp_message['nlri']
 
-        #
-        # next_hop
-        # next_hop = bgp_message['path_attributes']  # TODO!
-        # update['next_hop'] = next_hop
+        next_hop, as_path = None, None
 
-        #
-        # as_path
-        # as_path = bgp_message['path_attributes']  # TODO!
-        # update['as_path'] = as_path
+        '''
+        next_hop = bgp_message['path_attributes']  # TODO!
+        as_path = bgp_message['path_attributes']  # TODO!
+        '''
 
         out = []
 
@@ -131,9 +126,9 @@ class ParseUpdates:
             update = {
                 "timestamp": timestamp,
                 "range": pre['prefix'],
-                "next_hop": None,
+                "next_hop": next_hop,
                 "peer_as": peer_as,
-                "as_path": None
+                "as_path": as_path
             }
 
             out.append(update)
@@ -175,10 +170,11 @@ class ParseUpdates:
 
         withdrawn_routes = bgp_message['withdrawn_routes']
 
-        #
-        # as_path
-        # as_path = bgp_message['path_attributes']  # TODO!
-        # update['as_path'] = as_path
+        as_path = None
+
+        '''
+        as_path = bgp_message['path_attributes']  # TODO!
+        '''
 
         out = []
 
@@ -187,7 +183,7 @@ class ParseUpdates:
                 "timestamp": timestamp,
                 "range": pre['prefix'],
                 "peer_as": peer_as,
-                "as_path": None
+                "as_path": as_path
             }
 
             out.append(update)
