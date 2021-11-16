@@ -272,7 +272,7 @@ def main():
     rt.helper_print_routing_table_descriptions()
     rt.helper_print_routing_table_descriptions(collapse=True)
     for destination in ["8.8.8.8", "125.161.0.1"]:
-        paths = rt.find_path_to_destination(unicode(destination))
+        paths = rt.find_path_to_destination(destination)
         for idx, path in enumerate(paths):
             print(idx, destination, path)
 
