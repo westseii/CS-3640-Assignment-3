@@ -86,7 +86,7 @@ class RoutingTable:
 
         aRange = announcement['range']
         aTime = announcement['timestamp']
-        aSource = announcement['source_as']
+        aPeer = announcement['peer_as']
         aHop = announcement['next_hop']
         aPath = announcement['as_path']
 
@@ -101,11 +101,11 @@ class RoutingTable:
         
         # no entry exists
         if self.routing_table[aRange] == None:
-            self.routing_table[aRange] = {'source_as' : aSource, 'timestamp' : aTime, 'as_path' : aPath, 'next_hop' : aHop}
+            self.routing_table[aRange] = {'peer_as' : aPeer, 'timestamp' : aTime, 'as_path' : aPath, 'next_hop' : aHop}
         
         # check and update existing entry
-        if aPath['length'] < self.routing_table[aRange]['as_path']['length']:
-            self.routing_table[aRange] = {'source_as' : aSource, 'timestamp' : aTime, 'as_path' : aPath, 'next_hop' : aHop}
+        if aPath['value'][0]['length'] < self.routing_table[aRange]['as_path']['value'][0]['length']:
+            self.routing_table[aRange] = {'peer_as' : aPeer, 'timestamp' : aTime, 'as_path' : aPath, 'next_hop' : aHop}
             self.total_paths_changed += 1
 
         return True
@@ -138,7 +138,7 @@ class RoutingTable:
 
         aRange = withdrawal['range']
         aTime = withdrawal['timestamp']
-        aSource = withdrawal['source_as']
+        aPeer = withdrawal['peer_as']
     
         # update total_updates_received
         self.total_updates_received += 1
@@ -150,12 +150,12 @@ class RoutingTable:
             self.time_of_latest_update = aTime
 
         # check and update existing entry
-        if (self.routing_table[aRange] != None) and (aSource == self.routing_table[aRange]['source_as']):
+        if (self.routing_table[aRange] != None) and (aPeer == self.routing_table[aRange]['peer_as']):
             self.routing_table.pop(aRange)
             self.total_paths_changed += 1
 
         return True
-        
+
         ###
 
     def measure_reachability(self):
@@ -177,6 +177,9 @@ class RoutingTable:
         """
         ###
         # fill in your code here
+
+        
+
         ###
 
     def collapse_routing_table(self):
