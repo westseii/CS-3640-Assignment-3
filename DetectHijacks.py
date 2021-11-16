@@ -12,6 +12,7 @@ understand exactly how BGP hijacks work and how they can be used to implement
 censorship.
 """
 
+
 import json
 from RoutingTable import RoutingTable
 from ParseUpdates import ParseUpdates

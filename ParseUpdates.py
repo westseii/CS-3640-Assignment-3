@@ -63,7 +63,7 @@ class ParseUpdates:
         for update in mrtparse.Reader(self.filename):
 
             # parse the update
-            timestamp = update.data['timestamp']
+            timestamp = update.data['timestamp'][0]
             peer_as = update.data['peer_as']
             bgp_message = update.data['bgp_message']  # bgp_message dict
 
@@ -71,15 +71,15 @@ class ParseUpdates:
             self.__parse_announcement_updates(timestamp, peer_as, bgp_message)
             self.__parse_withdrawal_updates(timestamp, peer_as, bgp_message)
 
-            break  # only parse the first update. remove this break to parse ALL updates
+            # break  # only parse the first update. remove this break to parse ALL updates
 
         # python3 Tests.py -cp 1
 
         ###
         self.time_to_parse = time.time() - start_time
-        logging.info("Time taken to parse all records: %d second(s)" %
+        logging.info("Time taken to parse all records: %s second(s)" %
                      self.time_to_parse)
-        logging.info("Routes announced: %d | Routes withdrawn: %d" %
+        logging.info("Routes announced: %s | Routes withdrawn: %s" %
                      (self.n_announcements, self.n_withdrawals))
         return True
 
@@ -113,23 +113,33 @@ class ParseUpdates:
         # fill in your code here
         ###
 
-        print("\n")
-        print(timestamp)
-        print(peer_as)
-        print(bgp_message)  # show in terminal, debug
-        print("\n")
+        dest_ip_range = bgp_message['nlri']
 
-        update = {
-            "timestamp": timestamp[0],
-            "range": None,
-            "next_hop": None,
-            "peer_as": None,
-            "as_path": None
-        }
+        #
+        # next_hop
+        # next_hop = bgp_message['path_attributes']  # TODO!
+        # update['next_hop'] = next_hop
 
-        bgp_message__destination_ip_range = None
-        bgp_message__next_hop = None
-        bgp_message__as_path = None
+        #
+        # as_path
+        # as_path = bgp_message['path_attributes']  # TODO!
+        # update['as_path'] = as_path
+
+        out = []
+
+        for pre in dest_ip_range:
+            update = {
+                "timestamp": timestamp,
+                "range": pre['prefix'],
+                "next_hop": None,
+                "peer_as": peer_as,
+                "as_path": None
+            }
+
+            out.append(update)
+
+        self.announcements[timestamp] = out
+        self.n_announcements += len(dest_ip_range)
 
         # python3 Tests.py -cp 1
 
@@ -162,6 +172,28 @@ class ParseUpdates:
         ###
         # fill in your code here
         ###
+
+        withdrawn_routes = bgp_message['withdrawn_routes']
+
+        #
+        # as_path
+        # as_path = bgp_message['path_attributes']  # TODO!
+        # update['as_path'] = as_path
+
+        out = []
+
+        for pre in withdrawn_routes:
+            update = {
+                "timestamp": timestamp,
+                "range": pre['prefix'],
+                "peer_as": peer_as,
+                "as_path": None
+            }
+
+            out.append(update)
+
+        self.withdrawals[timestamp] = out
+        self.n_withdrawals += len(withdrawn_routes)
 
         # python3 Tests.py -cp 1
 
@@ -207,19 +239,19 @@ def main():
     pu = ParseUpdates(filename="./data/updates.20080219.0015.bz2")
     pu.parse_updates()
     pu.to_json_helper_function("./sample-mrt-in-json.json")
-    logging.info("Time taken to parse all records: %d second(s)" %
+    logging.info("Time taken to parse all records: %s second(s)" %
                  pu.time_to_parse)
-    logging.info("Routes announced: %d | Routes withdrawn: %d" %
+    logging.info("Routes announced: %s | Routes withdrawn: %s" %
                  (pu.n_announcements, pu.n_withdrawals))
     updates = pu.get_next_updates()
     while True:
-        next_updates = updates.next()
+        next_updates = next(updates)
         if next_updates['timestamp'] is None:
             logging.info("No more updates to process in file: %s" %
                          pu.filename)
             break
         else:
-            logging.info("At timestamp: %d | %d announcements | %d withdrawals" % (next_updates['timestamp'],
+            logging.info("At timestamp: %s | %s announcements | %s withdrawals" % (next_updates['timestamp'],
                                                                                    len(
                                                                                        next_updates['announcements']),
                                                                                    len(next_updates['withdrawals'])))
