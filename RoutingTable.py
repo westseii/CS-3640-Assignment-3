@@ -84,15 +84,32 @@ class RoutingTable:
         ###
         # fill in your code here
 
+        aRange = announcement['range']
+        aTime = announcement['timestamp']
+        aSource = announcement['source_as']
+        aHop = announcement['next_hop']
+        aPath = announcement['as_path']
+
         # update total_updates_received
-        self.total_updates_received = self.total_updates_received + 1
+        self.total_updates_received += 1
 
         # update time_of_earliest_update & time_of_latest_update
-        t = announcement["timestamp"]
-        if t < self.time_of_earliest_update:
-            self.time_of_earliest_update = t
-        self.time_of_latest_update = t
+        if aTime < self.time_of_earliest_update:
+            self.time_of_earliest_update = aTime
+        if aTime > self.time_of_latest_update:
+            self.time_of_latest_update = aTime
         
+        # no entry exists
+        if self.routing_table[aRange] == None:
+            self.routing_table[aRange] = {'source_as' : aSource, 'timestamp' : aTime, 'as_path' : aPath, 'next_hop' : aHop}
+        
+        # check and update existing entry
+        if aPath['length'] < self.routing_table[aRange]['as_path']['length']:
+            self.routing_table[aRange] = {'source_as' : aSource, 'timestamp' : aTime, 'as_path' : aPath, 'next_hop' : aHop}
+            self.total_paths_changed += 1
+
+        return True
+
         ###
 
     def apply_withdrawal(self, withdrawal):
@@ -119,14 +136,26 @@ class RoutingTable:
         ###
         # fill in your code here
 
+        aRange = withdrawal['range']
+        aTime = withdrawal['timestamp']
+        aSource = withdrawal['source_as']
+    
         # update total_updates_received
-        self.total_updates_received = self.total_updates_received + 1
+        self.total_updates_received += 1
 
         # update time_of_earliest_update & time_of_latest_update
-        t = withdrawal["timestamp"]
-        if t < self.time_of_earliest_update:
-            self.time_of_earliest_update = t
-        self.time_of_latest_update = t
+        if aTime < self.time_of_earliest_update:
+            self.time_of_earliest_update = aTime
+        if aTime > self.time_of_latest_update:
+            self.time_of_latest_update = aTime
+
+        # check and update existing entry
+        if (self.routing_table[aRange] != None) and (aSource == self.routing_table[aRange]['source_as']):
+            self.routing_table.pop(aRange)
+            self.total_paths_changed += 1
+
+        return True
+        
         ###
 
     def measure_reachability(self):
