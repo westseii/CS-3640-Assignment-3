@@ -67,7 +67,7 @@ class ParseUpdates:
             peer_as = update.data['peer_as']
             bgp_message = update.data['bgp_message']  # bgp_message dict
 
-            # run the appropriate functions
+           # run the appropriate functions
             self.__parse_announcement_updates(timestamp, peer_as, bgp_message)
             self.__parse_withdrawal_updates(timestamp, peer_as, bgp_message)
 
@@ -115,10 +115,9 @@ class ParseUpdates:
 
         next_hop, as_path = None, None
 
-        '''
-        next_hop = bgp_message['path_attributes']  # TODO!
-        as_path = bgp_message['path_attributes']  # TODO!
-        '''
+        if len(bgp_message['path_attributes']) > 2:
+            next_hop = bgp_message['path_attributes'][2]
+            as_path = bgp_message['path_attributes'][1]
 
         out = []
 
@@ -133,7 +132,10 @@ class ParseUpdates:
 
             out.append(update)
 
-        self.announcements[timestamp] = out
+        if not (timestamp in self.announcements):
+            self.announcements[timestamp] = []
+        self.announcements[timestamp] = self.announcements[timestamp] + out
+
         self.n_announcements += len(dest_ip_range)
 
         # python3 Tests.py -cp 1
@@ -170,12 +172,6 @@ class ParseUpdates:
 
         withdrawn_routes = bgp_message['withdrawn_routes']
 
-        as_path = None
-
-        '''
-        as_path = bgp_message['path_attributes']  # TODO!
-        '''
-
         out = []
 
         for pre in withdrawn_routes:
@@ -183,13 +179,15 @@ class ParseUpdates:
                 "timestamp": timestamp,
                 "range": pre['prefix'],
                 "peer_as": peer_as,
-                "as_path": as_path
             }
 
             out.append(update)
 
-        self.withdrawals[timestamp] = out
-        self.n_withdrawals += len(withdrawn_routes)
+        if not (timestamp in self.withdrawals):
+            self.withdrawals[timestamp] = []
+        self.withdrawals[timestamp] = self.withdrawals[timestamp] + out
+
+        self.n_withdrawals += len(bgp_message['withdrawn_routes'])
 
         # python3 Tests.py -cp 1
 
