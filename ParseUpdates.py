@@ -115,7 +115,7 @@ class ParseUpdates:
 
         next_hop, as_path = None, None
 
-        if len(bgp_message['path_attributes']) > 2:
+        if len(bgp_message['path_attributes']) > 2:  # hacky!
             next_hop = bgp_message['path_attributes'][2]
             as_path = bgp_message['path_attributes'][1]
 
@@ -124,7 +124,7 @@ class ParseUpdates:
         for pre in dest_ip_range:
             update = {
                 "timestamp": timestamp,
-                "range": pre['prefix'],
+                "range": pre,
                 "next_hop": next_hop,
                 "peer_as": peer_as,
                 "as_path": as_path
@@ -177,7 +177,7 @@ class ParseUpdates:
         for pre in withdrawn_routes:
             update = {
                 "timestamp": timestamp,
-                "range": pre['prefix'],
+                "range": pre,
                 "peer_as": peer_as,
             }
 
