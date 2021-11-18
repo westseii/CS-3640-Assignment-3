@@ -184,6 +184,8 @@ class RoutingTable:
             leon = r_entry + "/" + str(self.routing_table[r_entry]["pl"])
             pl = self.routing_table[r_entry]["pl"]
 
+            ipaddress.IPv4Network(leon).overlaps(ipaddress.IPv4Network(leon))
+
             '''
             for t_entry in table:
                 n1 = ipaddress.ip_network(leon)
