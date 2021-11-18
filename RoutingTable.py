@@ -105,6 +105,8 @@ class RoutingTable:
 
         return True
 
+        # python3 Tests.py -cp 2
+
         ###
 
     def apply_withdrawal(self, withdrawal):
@@ -150,6 +152,8 @@ class RoutingTable:
 
         return True
 
+        # python3 Tests.py -cp 2
+
         ###
 
     def measure_reachability(self):
@@ -170,6 +174,29 @@ class RoutingTable:
         """
         ###
         # fill in your code here
+
+        # ipaddress.IPv4Network('addr/#').overlaps('addr')
+
+        table = []
+        counter = 0
+
+        for r_entry in self.routing_table:
+            leon = r_entry + "/" + str(self.routing_table[r_entry]["pl"])
+            pl = self.routing_table[r_entry]["pl"]
+
+            '''
+            for t_entry in table:
+                n1 = ipaddress.ip_network(leon)
+                n2 = ipaddress.ip_network(t_entry)
+            '''
+
+            table.append(leon)
+
+            counter += 2 ** (32 - pl)
+
+        self.reachability = counter
+
+        # python3 Tests.py -cp 3
 
         ###
 
