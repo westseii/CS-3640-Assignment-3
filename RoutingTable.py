@@ -131,6 +131,18 @@ class RoutingTable:
         # fill in your code here
         ###
 
+        addresses = []
+        unique_addresses = None
+
+        for address in self.routing_table['prefix']:
+            
+            addresses.append(address)
+            
+        addresses_collapsed = address.collapse_addresses
+
+        unique_addresses = len(addresses_collapsed)
+
+        self.reachability = unique_addresses
     def collapse_routing_table(self):
         """
         Checkpoint ID: 4 [3 points]
