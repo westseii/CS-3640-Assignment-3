@@ -12,6 +12,7 @@ build your routing table.
 
 """
 
+from os import times
 import mrtparse
 import json
 import time
@@ -22,6 +23,7 @@ class ParseUpdates:
     """
         Class for parsing updates recorded in BGP MRT dumps.
     """
+
     def __init__(self, filename):
         """
         :param filename: This is the MRT file to be parsed by the methods in
@@ -56,9 +58,27 @@ class ParseUpdates:
         ###
         # fill in your code here
         ###
+
+        # get data from mrtparse
+        for update in mrtparse.Reader(self.filename):
+
+            # parse the update
+            timestamp = update.data['timestamp'][0]
+            peer_as = update.data['peer_as']
+            bgp_message = update.data['bgp_message']  # bgp_message dict
+
+           # run the appropriate functions
+            self.__parse_announcement_updates(timestamp, peer_as, bgp_message)
+            self.__parse_withdrawal_updates(timestamp, peer_as, bgp_message)
+
+        # python3 Tests.py -cp 1
+
+        ###
         self.time_to_parse = time.time() - start_time
-        logging.info("Time taken to parse all records: %d second(s)" % self.time_to_parse)
-        logging.info("Routes announced: %d | Routes withdrawn: %d" % (self.n_announcements, self.n_withdrawals))
+        logging.info("Time taken to parse all records: %s second(s)" %
+                     self.time_to_parse)
+        logging.info("Routes announced: %s | Routes withdrawn: %s" %
+                     (self.n_announcements, self.n_withdrawals))
         return True
 
     def __parse_announcement_updates(self, timestamp, peer_as, bgp_message):
@@ -90,6 +110,37 @@ class ParseUpdates:
         ###
         # fill in your code here
         ###
+
+        dest_ip_range = bgp_message['nlri']
+
+        next_hop, as_path = None, None
+
+        if len(bgp_message['path_attributes']) > 2:  # hacky!
+            next_hop = bgp_message['path_attributes'][2]
+            as_path = bgp_message['path_attributes'][1]
+
+        out = []
+
+        for pre in dest_ip_range:
+            update = {
+                "timestamp": timestamp,
+                "range": pre,
+                "next_hop": next_hop,
+                "peer_as": peer_as,
+                "as_path": as_path
+            }
+
+            out.append(update)
+
+        if not (timestamp in self.announcements):
+            self.announcements[timestamp] = []
+        self.announcements[timestamp] = self.announcements[timestamp] + out
+
+        self.n_announcements += len(dest_ip_range)
+
+        # python3 Tests.py -cp 1
+
+        ###
         return True
 
     def __parse_withdrawal_updates(self, timestamp, peer_as, bgp_message):
@@ -118,6 +169,29 @@ class ParseUpdates:
         ###
         # fill in your code here
         ###
+
+        withdrawn_routes = bgp_message['withdrawn_routes']
+
+        out = []
+
+        for pre in withdrawn_routes:
+            update = {
+                "timestamp": timestamp,
+                "range": pre,
+                "peer_as": peer_as,
+            }
+
+            out.append(update)
+
+        if not (timestamp in self.withdrawals):
+            self.withdrawals[timestamp] = []
+        self.withdrawals[timestamp] = self.withdrawals[timestamp] + out
+
+        self.n_withdrawals += len(bgp_message['withdrawn_routes'])
+
+        # python3 Tests.py -cp 1
+
+        ###
         return True
 
     def get_next_updates(self):
@@ -128,9 +202,11 @@ class ParseUpdates:
         withdrawals when called. Records yielded are sorted by time.
         :return:
         """
-        timestamps = sorted(list(set(self.announcements.keys()).union(set(self.withdrawals.keys()))))
+        timestamps = sorted(
+            list(set(self.announcements.keys()).union(set(self.withdrawals.keys()))))
         for timestamp in timestamps:
-            update_record = {'announcements': [], 'withdrawals': [], 'timestamp': timestamp}
+            update_record = {'announcements': [],
+                             'withdrawals': [], 'timestamp': timestamp}
             if timestamp in self.announcements.keys():
                 update_record['announcements'] = self.announcements[timestamp]
             if timestamp in self.withdrawals.keys():
@@ -157,17 +233,21 @@ def main():
     pu = ParseUpdates(filename="./data/updates.20080219.0015.bz2")
     pu.parse_updates()
     pu.to_json_helper_function("./sample-mrt-in-json.json")
-    logging.info("Time taken to parse all records: %d second(s)" % pu.time_to_parse)
-    logging.info("Routes announced: %d | Routes withdrawn: %d" % (pu.n_announcements, pu.n_withdrawals))
+    logging.info("Time taken to parse all records: %s second(s)" %
+                 pu.time_to_parse)
+    logging.info("Routes announced: %s | Routes withdrawn: %s" %
+                 (pu.n_announcements, pu.n_withdrawals))
     updates = pu.get_next_updates()
     while True:
-        next_updates = updates.next()
+        next_updates = next(updates)
         if next_updates['timestamp'] is None:
-            logging.info("No more updates to process in file: %s" % pu.filename)
+            logging.info("No more updates to process in file: %s" %
+                         pu.filename)
             break
         else:
-            logging.info("At timestamp: %d | %d announcements | %d withdrawals" % (next_updates['timestamp'],
-                                                                                   len(next_updates['announcements']),
+            logging.info("At timestamp: %s | %s announcements | %s withdrawals" % (next_updates['timestamp'],
+                                                                                   len(
+                                                                                       next_updates['announcements']),
                                                                                    len(next_updates['withdrawals'])))
 
 
