@@ -105,8 +105,6 @@ class RoutingTable:
 
         return True
 
-        # python3 Tests.py -cp 2
-
         ###
 
     def apply_withdrawal(self, withdrawal):
@@ -152,8 +150,6 @@ class RoutingTable:
 
         return True
 
-        # python3 Tests.py -cp 2
-
         ###
 
     def measure_reachability(self):
@@ -175,28 +171,47 @@ class RoutingTable:
         ###
         # fill in your code here
 
-        # ipaddress.IPv4Network('addr/#').overlaps('addr')
+        self.reachability = 0
+        table = {}
+        keys = []
+        checkTable = []
 
-        table = []
-        counter = 0
+        # creates dictionary called 'table' where keys are the unique prefix lengths found in routing table
+        # and values are lists of all routing table entries with specified prefix length
+        for pl in range(33):
+            prefixes = []
+            for r_entry in self.routing_table:
+                if self.routing_table[r_entry]['pl'] == pl:
+                    prefixes.append([ipaddress.ip_network(
+                        r_entry + "/" + str(self.routing_table[r_entry]["pl"])), self.routing_table[r_entry]["pl"]])
+            if len(prefixes) != 0:
+                table[pl] = prefixes
+                keys.append(pl)
 
-        for r_entry in self.routing_table:
-            leon = r_entry + "/" + str(self.routing_table[r_entry]["pl"])
-            pl = self.routing_table[r_entry]["pl"]
+        # counts reachability all routing table entries with minimal prefix length
+        for entry1 in table[keys[0]]:
+            self.reachability += 2 ** (32-entry1[1])
+            checkTable.append(entry1)
 
-            ipaddress.IPv4Network(leon).overlaps(ipaddress.IPv4Network(leon))
+        # counts reachability of all other routing table entries by first checking if it is
+        # a subnet of any entry with a longer prefix length
+        x = 1
+        while x < len(keys):
+            print(x)
+            tempTable = []  # tempTable used to save from checking against entries with same length prefix length
+            for entry2 in table[keys[x]]:
+                toCount = True
+                for entry3 in checkTable:
+                    if entry2[0].subnet_of(entry3[0]):
+                        toCount = False
+                        break
+                if toCount:
+                    self.reachability += 2 ** (32-entry2[1])
+                    tempTable.append(entry2)
+            checkTable.extend(tempTable)
+            x += 1
 
-            '''
-            for t_entry in table:
-                n1 = ipaddress.ip_network(leon)
-                n2 = ipaddress.ip_network(t_entry)
-            '''
-
-            table.append(leon)
-
-            counter += 2 ** (32 - pl)
-
-        self.reachability = counter
+        return True
 
         # python3 Tests.py -cp 3
 
@@ -221,6 +236,64 @@ class RoutingTable:
         """
         ###
         # fill in your code here
+
+        # experiment 1
+
+        rt = self.routing_table
+        rt2 = self.routing_table.copy()
+
+        iterator = []
+
+        for pre in rt:
+
+            for pre_oth in rt:
+
+                # missing contains check
+
+                if ((rt[pre]['peer_as'] == rt[pre_oth]['peer_as']) and
+                    (rt[pre]['as_path'] == rt[pre_oth]['as_path']) and
+                        (rt[pre]['next_hop'] == rt[pre_oth]['next_hop'])):
+
+                    iterator.append(ipaddress.IPv4Network(
+                        pre + "/" + str(self.routing_table[pre]["pl"])))
+
+            # incomplete
+
+            # update timestamps?
+
+        addresses = [str(prefix.network_address)
+                     for prefix in ipaddress.collapse_addresses(iterator)]
+
+        # diff?
+
+        for addr in addresses:
+            if addr in rt:
+                rt2.pop(str(addr))
+
+        self.routing_table = rt2
+
+        # experiment 2
+
+        '''
+        rt = self.routing_table  # reference shorthand
+        rt2 = self.routing_table.copy()
+
+        pls = set()
+
+        for prefix in rt:
+            if rt[prefix]['pl'] not in pls:  # or range(33)
+                pls.add(rt[prefix]["pl"])
+
+        for pl in pls:
+            pass
+
+        self.routing_table = rt2  # overwrite
+        '''
+
+        return True
+
+        # python3 Tests.py -cp 4
+
         ###
 
     def find_path_to_destination(self, destination):
@@ -278,7 +351,7 @@ def main():
     # pu.to_json_helper_function("./test.json")
     updates = pu.get_next_updates()
     while True:
-        next_updates = updates.next()
+        next_updates = next(updates)
         if next_updates['timestamp'] is None:
             logging.info("No more updates to process in file: %s" %
                          pu.filename)
