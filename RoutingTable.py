@@ -96,12 +96,12 @@ class RoutingTable:
         # no entry exists
         if not (aRange in self.routing_table):
             self.routing_table[aRange] = {
-                'peer_as': aPeer, 'timestamp': aTime, 'as_path': aPath, 'next_hop': aHop, 'pl': aRangePL}
+                'source_as': aPeer, 'timestamp': aTime, 'as_path': aPath, 'next_hop': aHop, 'pl': aRangePL}
 
         # check and update existing entry
         if aPath['value'][0]['length'] < self.routing_table[aRange]['as_path']['value'][0]['length']:
             self.routing_table[aRange] = {
-                'peer_as': aPeer, 'timestamp': aTime, 'as_path': aPath, 'next_hop': aHop, 'pl': aRangePL}
+                'source_as': aPeer, 'timestamp': aTime, 'as_path': aPath, 'next_hop': aHop, 'pl': aRangePL}
             self.total_paths_changed += 1
 
         return True
@@ -145,7 +145,7 @@ class RoutingTable:
             self.time_of_latest_update = aTime
 
         # check and update existing entry
-        if (aRange in self.routing_table) and (aPeer == self.routing_table[aRange]['peer_as']):
+        if (aRange in self.routing_table) and (aPeer == self.routing_table[aRange]['source_as']):
             self.routing_table.pop(aRange)
             self.total_paths_changed += 1
 
@@ -241,7 +241,7 @@ class RoutingTable:
 
         # Create copy of routing table with built in ip address attribute
         for entry1 in self.routing_table:
-            rtCopy[entry1] = {"peer_as": self.routing_table[entry1]["peer_as"], "timestamp": self.routing_table[entry1]["timestamp"], "as_path": self.routing_table[entry1]["as_path"], "next_hop": self.routing_table[entry1]["next_hop"], "pl":self.routing_table[entry1]["pl"], "ip": ipaddress.ip_network(entry1 + "/" + str(self.routing_table[entry1]["pl"]))}   
+            rtCopy[entry1] = {"source_as": self.routing_table[entry1]["source_as"], "timestamp": self.routing_table[entry1]["timestamp"], "as_path": self.routing_table[entry1]["as_path"], "next_hop": self.routing_table[entry1]["next_hop"], "pl":self.routing_table[entry1]["pl"], "ip": ipaddress.ip_network(entry1 + "/" + str(self.routing_table[entry1]["pl"]))}   
 
         # Divide entries into separate lists based on similar attributes
         for entry2 in rtCopy:
@@ -250,7 +250,7 @@ class RoutingTable:
                 for value in dict0.values():
                     check = value
                     break
-                if check['peer_as'] == rtCopy[entry2]['peer_as'] and check['as_path'] == rtCopy[entry2]['as_path'] and check['next_hop'] == rtCopy[entry2]['next_hop']:
+                if check['source_as'] == rtCopy[entry2]['source_as'] and check['as_path'] == rtCopy[entry2]['as_path'] and check['next_hop'] == rtCopy[entry2]['next_hop']:
                     newDict = False
                     dict0[entry2] = rtCopy[entry2]
             if newDict:
@@ -278,7 +278,7 @@ class RoutingTable:
                             else:                                   # toPop keeps track of redundant entries
                                 toPop.append(entry4)
                     key = str(ip).split("/")[0]
-                    newDict[key] = {"peer_as": dict1[maxEntry]["peer_as"], "timestamp": dict1[maxEntry]["timestamp"], "as_path": dict1[maxEntry]["as_path"], "next_hop": dict1[maxEntry]["next_hop"], "pl": int(str(ip).split("/")[1]), "ip": ip}
+                    newDict[key] = {"source_as": dict1[maxEntry]["source_as"], "timestamp": dict1[maxEntry]["timestamp"], "as_path": dict1[maxEntry]["as_path"], "next_hop": dict1[maxEntry]["next_hop"], "pl": int(str(ip).split("/")[1]), "ip": ip}
                     toPop.append(maxEntry)
                     for entry5 in toPop:                            # remove redundant entries
                         dict1.pop(entry5)
@@ -317,6 +317,34 @@ class RoutingTable:
         """
         ###
         # fill in your code here
+
+        prefixes = []
+        paths = []
+        destinationIP = ipaddress.ip_network(destination + "/32")
+
+        # Check each entry in routing table
+        for r_entry in self.routing_table:
+            if self.routing_table[r_entry]["ip"].supernet_of(destinationIP):
+                if len(prefixes) == 0:          # If no existing paths, add path
+                    prefixes.append(self.routing_table[r_entry]["pl"])
+                    paths.append({"as_path": self.routing_table[r_entry]["as_path"]["value"][0]["value"], "next_hop": self.routing_table[r_entry]["next_hop"]["value"], "prefix_len": self.routing_table[r_entry]["pl"], "source_as": self.routing_table[r_entry]["source_as"]})
+                else:                           # If paths exist, do add path at proper index
+                    i = 0
+                    while i < len(prefixes):
+                        if prefixes[i] < self.routing_table[r_entry]["pl"]:
+                            prefixes.insert(i, self.routing_table[r_entry]["pl"])
+                            paths.insert(i, {"as_path": self.routing_table[r_entry]["as_path"]["value"][0]["value"], "next_hop": self.routing_table[r_entry]["next_hop"]["value"], "prefix_len": self.routing_table[r_entry]["pl"], "source_as": self.routing_table[r_entry]["source_as"]})
+                        else:
+                            i += 1
+                            if i == len(prefixes):
+                                prefixes.append(self.routing_table[r_entry]["pl"])
+                                paths.append({"as_path": self.routing_table[r_entry]["as_path"]["value"][0]["value"], "next_hop": self.routing_table[r_entry]["next_hop"]["value"], "prefix_len": self.routing_table[r_entry]["pl"], "source_as": self.routing_table[r_entry]["source_as"]})
+
+        # Set return value
+        if len(paths) == 0:
+            paths.append({"as_path": None, "next_hop": None, "prefix_len": None, "source_as": None})
+        return paths
+
         ###
 
     def helper_print_routing_table_descriptions(self, collapse=False):
