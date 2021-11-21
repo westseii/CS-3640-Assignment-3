@@ -47,6 +47,7 @@ class RoutingTable:
         self.time_of_earliest_update, self.time_of_latest_update = sys.maxsize, 0
         self.total_updates_received, self.total_paths_changed = 0, 0
         self.reachability = 0
+        self.newRouting = {}
 
     def apply_announcement(self, announcement):
         """
@@ -196,7 +197,6 @@ class RoutingTable:
         # a subnet of any entry with a longer prefix length
         x = 1
         while x < len(keys):
-            print(x)
             tempTable = []                                  #tempTable used to save from checking against entries with same length prefix length
             for entry2 in table[keys[x]]:
                 toCount = True
@@ -236,8 +236,61 @@ class RoutingTable:
         ###
         # fill in your code here
 
-        rt2 = self.routing_table
-        leon = 1
+        rtCopy = {}
+        sortedEntries = []
+
+        # Create copy of routing table with built in ip address attribute
+        for entry1 in self.routing_table:
+            rtCopy[entry1] = {"peer_as": self.routing_table[entry1]["peer_as"], "timestamp": self.routing_table[entry1]["timestamp"], "as_path": self.routing_table[entry1]["as_path"], "next_hop": self.routing_table[entry1]["next_hop"], "pl":self.routing_table[entry1]["pl"], "ip": ipaddress.ip_network(entry1 + "/" + str(self.routing_table[entry1]["pl"]))}   
+
+        # Divide entries into separate lists based on similar attributes
+        for entry2 in rtCopy:
+            newDict = True
+            for dict0 in sortedEntries:
+                for value in dict0.values():
+                    check = value
+                    break
+                if check['peer_as'] == rtCopy[entry2]['peer_as'] and check['as_path'] == rtCopy[entry2]['as_path'] and check['next_hop'] == rtCopy[entry2]['next_hop']:
+                    newDict = False
+                    dict0[entry2] = rtCopy[entry2]
+            if newDict:
+                tempDict = {}
+                tempDict.update({entry2: rtCopy[entry2]})
+                sortedEntries.append(tempDict)
+        
+        # Collapses each sorted dictionary
+        for dict1 in sortedEntries:
+            if len(dict1) != 1:                                     # Leave single-entry dictionaries alone
+                ips = []
+                newDict = {}
+                for entry3 in dict1:                                # Generate a list of ips
+                    ips.append(dict1[entry3]['ip'])
+                for ip in ipaddress.collapse_addresses(ips):        # Collapse list of ips to iterate over
+                    maxEntry = None
+                    toPop = []
+                    for entry4 in dict1:                            # Check each dictionary entry to see if it fits in the collapsed block
+                        if dict1[entry4]['ip'].subnet_of(ip):
+                            if maxEntry == None:
+                                maxEntry = entry4
+                            elif dict1[entry4]['timestamp'] > dict1[maxEntry]['timestamp']: # Update timestamps as needed
+                                toPop.append(maxEntry)
+                                maxEntry = entry4
+                            else:                                   # toPop keeps track of redundant entries
+                                toPop.append(entry4)
+                    key = str(ip).split("/")[0]
+                    newDict[key] = {"peer_as": dict1[maxEntry]["peer_as"], "timestamp": dict1[maxEntry]["timestamp"], "as_path": dict1[maxEntry]["as_path"], "next_hop": dict1[maxEntry]["next_hop"], "pl": int(str(ip).split("/")[1]), "ip": ip}
+                    toPop.append(maxEntry)
+                    for entry5 in toPop:                            # remove redundant entries
+                        dict1.pop(entry5)
+                    for entry6 in newDict:                          # add new collapsed entries
+                        dict1[entry6] = newDict[entry6]
+        
+        # Update routing table by merging all collapsed sorted dictionaries
+        self.routing_table.clear()
+        for dict2 in sortedEntries:
+            self.routing_table.update(dict2)
+        
+        return True
 
         ###
 
