@@ -77,6 +77,83 @@ class DetectHijacks:
         # fill in your code here
         ###
 
+
+
+        networks = ipaddress.ip_network(self.monitored_range, False)
+        set = False
+        for mrt in mrt_files:
+            pu = ParseUpdates(mrt)
+            pu.parse_updates()
+            updates = pu.get_next_updates()
+            while True:
+                next_updates = updates.__next__()
+                if next_updates['timestamp'] is None:
+                    break
+                else:
+                    for announcement in next_updates["announcements"]:
+                        network = ipaddress.IPv4Network(announcement['range']['prefix'], False)
+                        if announcement['range']['prefix'] not in self.routing_table.routing_table:
+                            self.routing_table.apply_announcement(announcement)
+                            if network.subnet_of(networks):
+                                if not set:
+                                    self.expected_as = announcement['as_path']["value"][0]["value"][-1]
+                                    self.expected_as_org = self.get_org(self.expected_as_org)
+                                    logging.info("[@t={}] First announcement for destination: {}, (AS: {}, {})".format(
+                                        announcement['timestamp'], announcement['range']['prefix'], self.expected_as, self.expected_as_org))
+                                    set = True
+                            elif self.expected_as != announcement['as_path']["value"][0]["value"][-1]:
+                                interactions_sus = {
+                                        'timestamp': announcement['timestamp'],
+                                        'as_num_expected' : self.expected_as,
+                                        'as_org_expected' : self.expected_as_org,
+                                        'as_num_actual' : announcement['as_path']["value"][0]["value"][-1],
+                                        'as_org_actual' : self.get_org(announcement['as_path']["value"][0]["value"][-1])
+                                }
+                                logging.info("[@t={}], Suspicious announcement for destination: {}. Expected destination AS: {} ({}), but observed AS: {} ({}) instead".format(
+                                    announcement['timestamp'], announcement['range']['prefix'], self.expected_as, self.expected_as_org, 
+                                    announcement['as_path']["value"][0]["value"][-1], 
+                                    self.get_org(announcement['as_path']["value"][0]["value"][-1])))
+                                self.suspicious_announcements_to_monitored_range.append(interactions_sus)
+                                self.all_announcements_to_monitored_range.append(interactions_sus)
+                            else:
+                                self.routing_table.apply_announcement(announcement)
+                                interactions_safe = {"timestamp": announcement["timestamp"], "range": announcement['range'], 
+                                                        "as": self.expected_as, "org": self.expected_as_org}
+                                self.all_announcements_to_monitored_range.append(interactions_safe)
+                                logging.info('[@t={}] Announcement for destination: {} (AS: {}, {})'.format(interactions_safe['timestamp'], 
+                                announcement['range'], interactions_safe['as'], interactions_safe['org']))
+                        else:
+                            if network.subnet_of(networks):
+                                if self.expected_as == announcement["as_path"]["value"][0]["value"][-1]:
+                                    self.routing_table.apply_announcement(announcement)
+                                    interactions_safe = {
+                                        'timestamp': announcement['timestamp'],
+                                        'range' : announcement['range']['prefix'],
+                                        'as_num' : self.expected_as,
+                                        'as_org' : self.expected_as_org
+                                    }
+                                    self.all_announcements_to_monitored_range.append(interactions_safe)
+                                    logging.info("[@t={}] Announcement for destination: {} (AS: {}, {})".format(
+                                        interactions_safe['timestamp'], announcement['range']['prefix'], interactions_safe['as_num'],
+                                        interactions_safe['as_org']))
+                                else:
+                                    interactions_sus = {
+                                        'timestamp': announcement['timestamp'],
+                                        'as_num_expected' : self.expected_as,
+                                        'as_org_expected' : self.expected_as_org,
+                                        'as_num_actual' : announcement['as_path']["value"][0]["value"][-1],
+                                        'as_org_actual' : self.get_org(announcement['as_path']["value"][0]["value"][-1])
+                                    }
+                                    logging.info("[@t={}], Suspicious announcement for destination: {}. Expected destination AS: {} ({}), but observed AS: {} ({}) instead".format(
+                                        announcement['timestamp'], announcement['range']['prefix'], self.expected_as, self.expected_as_org, 
+                                        announcement['as_path']["value"][0]["value"][-1], 
+                                        self.get_org(announcement['as_path']["value"][0]["value"][-1])))
+                                    self.suspicious_announcements_to_monitored_range.append(interactions_sus)
+                                    self.all_announcements_to_monitored_range.append(interactions_sus)
+                            else:
+                                self.routing_table.apply_announcement(announcement)
+
+                                
     def get_org(self, asn):
         """
         Helper function that returns the name of the organization that owns a
@@ -99,7 +176,7 @@ class DetectHijacks:
         :return:
         """
         logging.info("Building ASN to Org dictionary")
-        with open("./data/20211001.as-org2info.jsonl") as fp:
+        with open("./data/20211001.as-org2info.jsonl", encoding='cp850') as fp:
             for line in fp:
                 record = json.loads(line)
                 try:

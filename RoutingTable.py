@@ -107,6 +107,37 @@ class RoutingTable:
 
         ###
 
+        aRange = announcement['range']['prefix']
+        aRangePL = announcement['range']['prefix_length']
+        aTime = announcement['timestamp']['prefix']
+        aPeer = announcement['peer_as']
+        aHop = announcement['next_hop']
+        aPath = announcement['as_path']
+
+        self.total_updates_received += 1
+
+        if not (aRange in self.routing_table):
+            self.routing_table[aRange] = {
+                'peer_as': aPeer,
+                'timestamp': aTime,
+                'as_path': aPath,
+                'next_hop': aHop,
+                'p1': aRangePL
+            }
+        
+        if aPath['value'][0]['length'] < self.routing_table[aRange]['as_path']['value'][0]['length']:
+            self.routing_table[aRange] = {
+                'peer_as': aPeer,
+                'timestamp': aTime,
+                'as_path': aPath,
+                'next_hop': aHop,
+                'p1': aRangePL
+            }
+            self.total_paths_changed += 1
+        return True
+
+
+
     def apply_withdrawal(self, withdrawal):
         """
         Checkpoint ID: 2 [1 point]
@@ -152,6 +183,23 @@ class RoutingTable:
 
         ###
 
+        aRange = withdrawal['range']['prefix']
+        aTime = withdrawal['timestamp']['prefix']
+        aPeer = withdrawal['peer_as']
+
+        self.total_updates_received += 1
+
+        if aTime < self.time_of_earliest_update:
+            self.time_of_earliest_update = aTime
+        if aTime > self.time_of_latest_update:
+            self.time_of_latest_update = aTime
+        
+        if (aRange in self.routing_table) and (aPeer == self.routing_table[aRange]['peer_as']):
+            self.routing_table.pop(aRange)
+            self.total_paths_changed += 1
+
+        return True
+
     def measure_reachability(self):
         """
         Checkpoint ID: 3 [1 point]
@@ -168,6 +216,7 @@ class RoutingTable:
             - Update the `self.reachability` parameter with this number.
         :return:
         """
+        
         ###
         # fill in your code here
 
@@ -185,6 +234,7 @@ class RoutingTable:
         unique_addresses = len(addresses_collapsed)
 
         self.reachability = unique_addresses
+
     def collapse_routing_table(self):
         """
         Checkpoint ID: 4 [3 points]

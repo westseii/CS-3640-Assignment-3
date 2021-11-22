@@ -129,7 +129,6 @@ class ParseUpdates:
                 "peer_as": peer_as,
                 "as_path": as_path
             }
-
             out.append(update)
 
         if not (timestamp in self.announcements):
@@ -233,10 +232,8 @@ def main():
     pu = ParseUpdates(filename="./data/updates.20080219.0015.bz2")
     pu.parse_updates()
     pu.to_json_helper_function("./sample-mrt-in-json.json")
-    logging.info("Time taken to parse all records: %s second(s)" %
-                 pu.time_to_parse)
-    logging.info("Routes announced: %s | Routes withdrawn: %s" %
-                 (pu.n_announcements, pu.n_withdrawals))
+    logging.info("Time taken to parse all records: %s second(s)" % pu.time_to_parse)
+    logging.info("Routes announced: %s | Routes withdrawn: %s" % (pu.n_announcements, pu.n_withdrawals))
     updates = pu.get_next_updates()
     while True:
         next_updates = next(updates)
