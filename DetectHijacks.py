@@ -86,7 +86,7 @@ class DetectHijacks:
             pu.parse_updates()
             updates = pu.get_next_updates()
             while True:
-                next_updates = updates.__next__()
+                next_updates = next(updates)
                 if next_updates['timestamp'] is None:
                     break
                 else:
@@ -97,31 +97,31 @@ class DetectHijacks:
                             if network.subnet_of(networks):
                                 if not set:
                                     self.expected_as = announcement['as_path']["value"][0]["value"][-1]
-                                    self.expected_as_org = self.get_org(self.expected_as_org)
+                                    self.expected_as_org = self.get_org(self.expected_as)
                                     logging.info("[@t={}] First announcement for destination: {}, (AS: {}, {})".format(
                                         announcement['timestamp'], announcement['range']['prefix'], self.expected_as, self.expected_as_org))
                                     set = True
-                            elif self.expected_as != announcement['as_path']["value"][0]["value"][-1]:
-                                interactions_sus = {
+                                elif self.expected_as != announcement['as_path']["value"][0]["value"][-1]:
+                                    interactions_sus = {
                                         'timestamp': announcement['timestamp'],
                                         'as_num_expected' : self.expected_as,
                                         'as_org_expected' : self.expected_as_org,
                                         'as_num_actual' : announcement['as_path']["value"][0]["value"][-1],
                                         'as_org_actual' : self.get_org(announcement['as_path']["value"][0]["value"][-1])
-                                }
-                                logging.info("[@t={}], Suspicious announcement for destination: {}. Expected destination AS: {} ({}), but observed AS: {} ({}) instead".format(
-                                    announcement['timestamp'], announcement['range']['prefix'], self.expected_as, self.expected_as_org, 
-                                    announcement['as_path']["value"][0]["value"][-1], 
-                                    self.get_org(announcement['as_path']["value"][0]["value"][-1])))
-                                self.suspicious_announcements_to_monitored_range.append(interactions_sus)
-                                self.all_announcements_to_monitored_range.append(interactions_sus)
-                            else:
-                                self.routing_table.apply_announcement(announcement)
-                                interactions_safe = {"timestamp": announcement["timestamp"], "range": announcement['range'], 
+                                    }
+                                    logging.info("[@t={}], Suspicious announcement for destination: {}. Expected destination AS: {} ({}), but observed AS: {} ({}) instead".format(
+                                        announcement['timestamp'], announcement['range']['prefix'], self.expected_as, self.expected_as_org, 
+                                        announcement['as_path']["value"][0]["value"][-1], 
+                                        self.get_org(announcement['as_path']["value"][0]["value"][-1])))
+                                    self.suspicious_announcements_to_monitored_range.append(interactions_sus)
+                                    self.all_announcements_to_monitored_range.append(interactions_sus)
+                                else:
+                                    self.routing_table.apply_announcement(announcement)
+                                    interactions_safe = {"timestamp": announcement["timestamp"], "range": announcement['range'], 
                                                         "as": self.expected_as, "org": self.expected_as_org}
-                                self.all_announcements_to_monitored_range.append(interactions_safe)
-                                logging.info('[@t={}] Announcement for destination: {} (AS: {}, {})'.format(interactions_safe['timestamp'], 
-                                announcement['range'], interactions_safe['as'], interactions_safe['org']))
+                                    self.all_announcements_to_monitored_range.append(interactions_safe)
+                                    logging.info('[@t={}] Announcement for destination: {} (AS: {}, {})'.format(interactions_safe['timestamp'], 
+                                        announcement['range'], interactions_safe['as'], interactions_safe['org']))
                         else:
                             if network.subnet_of(networks):
                                 if self.expected_as == announcement["as_path"]["value"][0]["value"][-1]:
