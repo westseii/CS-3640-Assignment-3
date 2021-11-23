@@ -340,9 +340,6 @@ class RoutingTable:
                                 prefixes.append(self.routing_table[r_entry]["pl"])
                                 paths.append({"as_path": self.routing_table[r_entry]["as_path"]["value"][0]["value"], "next_hop": self.routing_table[r_entry]["next_hop"]["value"], "prefix_len": self.routing_table[r_entry]["pl"], "source_as": self.routing_table[r_entry]["source_as"]})
 
-        # Set return value
-        if len(paths) == 0:
-            paths.append({"as_path": None, "next_hop": None, "prefix_len": None, "source_as": None})
         return paths
 
         ###
