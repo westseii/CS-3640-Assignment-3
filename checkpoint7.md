@@ -1,0 +1,5 @@
+Description for BGP Hacking:
+
+During the 2008 Youtube Hijacking by Pakistan, the Pakistani telecommunications company ended up cutting Youtube off from the global Internet. As simulated in cp6, all the ip addresses that supposedly belonged to Youtube ended up mapping to Pakistan Telecom instead. The reason for this anomaly is that Pakistan Telecom ended up claiming itself to be Youtube's destination, upon receiving orders to block Youtube. 
+
+As an attempt to halt Youtube within the borders of Pakistan, PK Telecom broadcasted its own AS for Youtube's ip range. This hijack might have blocked access to Youtube in Pakistan, but computers all across the world ended up reaching the webiste for PK Telecom (hence the anomlies in cp6). Fortunately, Youtube took back control by broadcasting 64 addresses that were more specific than PK telecom's, thanks to BGP. These results are shown towards the end of cp6's log, where Youtube was the sole website located.
